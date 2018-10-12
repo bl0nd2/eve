@@ -62,24 +62,15 @@ static int caesar(char const *infile) {
             for (i = 0; i < strlen(arg_ciphertext); i++) {
                 int ascii_value = arg_ciphertext[i];
 
-                /* IF:   ASCII value maps to a letter.
-                 * ELSE: ASCII value maps to a non-letter.
-                 * DO:   Assign a shifted letter, or non-letter. */
-                if ((ascii_value >= 65 && ascii_value <= 90) ||
-                    (ascii_value >= 97 && ascii_value <= 122)
-                ) {
+                if (isalpha(ascii_value)) {
                     char test_char = ascii_value + (26 - *shift);
-                    /* IF:   Shifted upwards value is still a letter (a-m,A-M).
-                     * ELSE: Shifted upwards value is not a letter (n-z,N-Z).
-                     * DO:   Assign shifted upwards value, or shifted downwards
-                     *         value. */
-                    if (isalpha(test_char) && check_case(arg_ciphertext[i], test_char))
+                    if (isalpha(test_char) && check_case(ascii_value, test_char))
                         plaintext[i] = test_char;
                     else
                         plaintext[i] = ascii_value - *shift;
                   }
                 else
-                    plaintext[i] = arg_ciphertext[i];
+                    plaintext[i] = ascii_value;
             }
             plaintext[strlen(arg_ciphertext)] = '\0';
 
