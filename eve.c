@@ -5,8 +5,11 @@
 #include <string.h>
 #include <argp.h>
 
+#define MOD(a,b) (((a % b) + b) % b)
+
 /* Global variables */
-static int arg_shift[26];
+
+static int arg_shifts[25];
 static char *arg_infile = NULL;
 static char *arg_outfile = NULL;
 static char *arg_cipher = NULL;
@@ -49,26 +52,26 @@ static int version(void) {
 }
 
 static int caesar(char const *infile) {
-    /* IF:   An infile isn't specified.
-     * ELSE: An infile is specified.
-     * DO:   Decode and output to STDIN, or to a file. */
+    if (arg_shifts[0] == 0) {
+        printf("error: no shift(s) given.\n");
+        return 1;
+    }
+
     if (! infile) {
-        int i, *shift;
+        int i, *shift, ascii_value, start_value;
+        char test_char;
         char *plaintext = malloc(sizeof(char) * strlen(arg_ciphertext));
         if (plaintext == NULL) return 1;
 
         /* Decode cipher in every shift given */
-        for (shift = arg_shift; *shift != 0; shift++) {
+        for (shift = arg_shifts; *shift != 0; shift++) {
             for (i = 0; i < strlen(arg_ciphertext); i++) {
-                int ascii_value = arg_ciphertext[i];
+                ascii_value = arg_ciphertext[i];
 
                 if (isalpha(ascii_value)) {
-                    char test_char = ascii_value + (26 - *shift);
-                    if (isalpha(test_char) && check_case(ascii_value, test_char))
-                        plaintext[i] = test_char;
-                    else
-                        plaintext[i] = ascii_value - *shift;
-                  }
+                    start_value = isupper(ascii_value) ? 65 : 97;
+                    plaintext[i] = start_value + MOD((ascii_value - start_value - *shift), 26);
+                }
                 else
                     plaintext[i] = ascii_value;
             }
@@ -117,8 +120,6 @@ static int output(char const *plntxt) {
 }
 
 static int parse_opt(int key, char *arg, struct argp_state *state) {
-    // printf("key: %c\n\n", key);
-
     switch(key)
     {
         case 'h':
@@ -143,18 +144,24 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
 
         case 's':
         {
-            int shift_count;
+            int shift_count = 0;
             char *token;
 
             /* Get list of shifts */
             while( (token = strsep(&arg,",")) != NULL ) {
-                if (atoi(token) == 0)
+                if (strcmp(token, "all") == 0) {
+                    for (shift_count = 0; shift_count < 25; shift_count++)
+                        arg_shifts[shift_count] = shift_count + 1;
+                    break;
+                }
+                else if (atoi(token) == 0)
                     continue;
-                if (shift_count < 26)
-                    arg_shift[shift_count++] = atoi(token);
-                else {
-                    puts("error: too many shifts.");
+                else if (atoi(token) < 0 || atoi(token) > 25) {
+                    printf("error: invalid shift \"%s\"\n", token);
                     return 1;
+                }
+                else {
+                    arg_shifts[shift_count++] = atoi(token);
                 }
             }
             break;
@@ -200,9 +207,9 @@ int main(int argc, char *argv[]) {
         if (strcmp(arg_cipher, "caesar") == 0)
             caesar(arg_infile);
     }
-    /*else {*/
-        /*puts("error: missing cipher");*/
-        /*return 1;*/
-    /*}*/
+    else {
+        puts("error: missing cipher");
+        return 1;
+    }
 }
 
