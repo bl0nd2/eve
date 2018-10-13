@@ -20,10 +20,9 @@ static const char *program_help_link = "https://github.com/bl0nd/eve";
 /* Prototypes */
 static int help(void);
 static int version(void);
-static int caesar(char const *infile);
-static int check_case(char const cvalue, char const pvalue); 
+static int caesar(const char *infile);
 static int free_ciphers(char *plntxt);
-static int output(char const *plntxt);
+static int output(const char *plntxt);
 static int parse_opt(int key, char *arg, struct argp_state *state);
 
 
@@ -51,7 +50,7 @@ static int version(void) {
     return 0;
 }
 
-static int caesar(char const *infile) {
+static int caesar(const char *infile) {
     if (arg_shifts[0] == 0) {
         printf("error: no shift(s) given.\n");
         return 1;
@@ -59,7 +58,6 @@ static int caesar(char const *infile) {
 
     if (! infile) {
         int i, *shift, ascii_value, start_value;
-        char test_char;
         char *plaintext = malloc(sizeof(char) * strlen(arg_ciphertext));
         if (plaintext == NULL) return 1;
 
@@ -95,21 +93,13 @@ static int caesar(char const *infile) {
     return 0;
 }
 
-static int check_case(char const cvalue, char const pvalue) {
-    if ((isupper(cvalue) && isupper(pvalue)) ||
-        (islower(cvalue) && islower(pvalue)))
-        return 1;
-    else
-        return 0;
-}
-
 static int free_ciphers(char *plntxt) {
     /* Free plaintext strings in cipher functions. */
     free(plntxt);
     return 0;
 }
 
-static int output(char const *plntxt) {
+static int output(const char *plntxt) {
     /* Handle plaintext output. */
     if (arg_infile) 
         printf("outputted to a file\n.");
