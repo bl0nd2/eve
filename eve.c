@@ -121,14 +121,12 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
         case 'i':
         {
             arg_infile = arg;
-            // printf("%s\n", arg_infile);
             break;
         }
 
         case 'o':
         {
             arg_outfile = arg;
-            // printf("%s\n", arg_infile);
             break;
         }
 
@@ -166,12 +164,8 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
                 printf("error: missing ciphertext.\n");
                 return 1;
             }
-            // printf("%s\n%s\n", arg_cipher, arg_ciphertext);
             break;
         }
-
-        // default:
-        //  printf("Unhandled option\n");
     }
 
     return 0;
@@ -196,10 +190,6 @@ int main(int argc, char *argv[]) {
     if (arg_cipher) {
         if (strcmp(arg_cipher, "caesar") == 0)
             caesar(arg_infile);
-    }
-    else {
-        puts("error: missing cipher");
-        return 1;
     }
 }
 
