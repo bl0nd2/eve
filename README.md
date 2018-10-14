@@ -70,4 +70,4 @@ bar, GJB, 3
 
 <a name="license"></a>
 ## License
-All files within this repo are released under the [MIT (OSI) License](https://en.wikipedia.org/wiki/MIT_License) as per the [LICENSE](https://github.com/bl0nd/architect/blob/master/LICENSE.txt) file stored in the root of this repo.
+All files within this repo are released under the [GNU General Public License v2.0](https://en.wikipedia.org/wiki/GNU_General_Public_License#Version_2) as per the [LICENSE](https://github.com/bl0nd/eve/blob/master/LICENSE.GPL2) file stored in the root of this repo.
