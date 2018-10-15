@@ -81,8 +81,8 @@ static int opt_error(Namespace parser) {
     }
 
     if (parser.cipher) {
-        if (!parser.ciphertext && !parser.infile) {
-            puts("error: missing ciphertext.");
+        if (parser.shifts[0] == 0) {
+            puts("error: no shift(s) given.");
             return 1;
         }
         else if (parser.ciphertext && parser.infile) {
@@ -90,8 +90,10 @@ static int opt_error(Namespace parser) {
                    "\"--infile\" is specified\n", parser.cipher);
             return 1;
         }
-        else if (parser.shifts[0] == 0) {
-            puts("error: no shift(s) given.");
+        else if ((!parser.ciphertext && !parser.infile) ||
+                 strcmp(parser.ciphertext, " "))
+        {
+            puts("error: missing ciphertext.");
             return 1;
         }
     }
@@ -167,7 +169,7 @@ int main(int argc, char *argv[]) {
 
     if (parser.cipher) {
         if (strcmp(parser.cipher, "caesar") == 0) {
-            char *ptext = setup_plaintext(parser.infile, parser.ciphertext);
+            char *ptext = setup_plaintext(&parser);
             run_caesar(ptext, &parser);
             free_plaintext(ptext);
         }
