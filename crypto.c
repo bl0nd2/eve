@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #include "crypto.h"
+#include "eve.h"
 #include "output.h"
 
 #define MOD(a,b) (((a % b) + b) % b)
@@ -53,33 +54,33 @@ int total_char_count(const char *infile) {
 /***********************************
  *             Crypto              *
  ***********************************/
-void run_caesar(char *ptext, int shifts[], char *ctext, char *infile, char *outfile) {
+void run_caesar(char *ptext, Namespace *parser) {
     int *shift, spacing;
 
-    if (! infile) {
-        for (shift = shifts; *shift; shift++) {
-            caesar(ctext, ptext, 0, shift, outfile);
-            output(ptext, outfile);
+    if (! parser->infile) {
+        for (shift = parser->shifts; *shift; shift++) {
+            caesar(parser->ciphertext, ptext, 0, shift);
+            output(ptext, parser->outfile);
         }
     }
     else {
         char line[255];
         FILE *fp;
 
-        for (shift = shifts; *shift; shift++) {
+        for (shift = parser->shifts; *shift; shift++) {
             spacing = 0;
-            fp = fopen(infile, "r");
+            fp = fopen(parser->infile, "r");
             while (fgets(line, 255, (FILE*)fp)) {
-                caesar(line, ptext, spacing, shift, outfile);
+                caesar(line, ptext, spacing, shift);
                 spacing += strlen(line);
             }
-            output(ptext, outfile);
+            output(ptext, parser->outfile);
             fclose(fp);
         }
     }
 }
 
-void caesar(char *ctext, char *ptext, const int space, const int *shift, char *outfile) {
+void caesar(char *ctext, char *ptext, const int spacing, const int *shift) {
     int i, ascii_val, start_val;
 
     for (i = 0; i < strlen(ctext); i++) {
@@ -87,9 +88,9 @@ void caesar(char *ctext, char *ptext, const int space, const int *shift, char *o
 
         if (isalpha(ascii_val)) {
             start_val = isupper(ascii_val) ? 65 : 97;
-            ptext[i + space] = start_val + MOD((ascii_val - start_val - *shift), 26);
+            ptext[i + spacing] = start_val + MOD((ascii_val - start_val - *shift), 26);
         }
         else
-            ptext[i + space] = ascii_val;
+            ptext[i + spacing] = ascii_val;
     }
 }
