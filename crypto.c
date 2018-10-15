@@ -7,14 +7,14 @@
 #include "eve.h"
 #include "output.h"
 
-#define MOD(a,b) (((a % b) + b) % b)
+#define MOD(a,b) (((a % b) + b) % b)  // C's native mod doesn't properly handle negative numbers (e.g., -1 % 26)
 
 
 /***********************************
  *          Crypto Setup           *
  ***********************************/
 char *setup_plaintext(Namespace *parser) {
-    /* Allocate memory to 'plaintext' */
+    /*  Allocate the appropriate amount of memory to plaintext. */
     char *plaintext;
 
     if (! parser->infile) {
@@ -37,13 +37,13 @@ char *setup_plaintext(Namespace *parser) {
 }
 
 int free_plaintext(char *ptext) {
-    /* Free plaintext strings in cipher functions. */
+    /*  Free plaintext strings in functions. */
     free(ptext);
     return 0;
 }
 
 int total_char_count(const char *infile) {
-    /* Return total numbers of characters in the input file. */
+    /*  Return total numbers of characters in the input file. */
     FILE *fp;
     int count;
     char buff[255];
@@ -61,6 +61,7 @@ int total_char_count(const char *infile) {
  *             Crypto              *
  ***********************************/
 void run_caesar(char *ptext, Namespace *parser) {
+    /*  Set up and run Caesar cipher decoder. */
     int *shift, spacing;
 
     if (! parser->infile) {
@@ -87,6 +88,7 @@ void run_caesar(char *ptext, Namespace *parser) {
 }
 
 void caesar(char *ctext, char *ptext, const int spacing, const int *shift) {
+    /*  Decode Caesar ciphers. */
     int i, ascii_val, start_val;
 
     for (i = 0; i < strlen(ctext); i++) {

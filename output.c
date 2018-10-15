@@ -3,7 +3,7 @@
 #include "output.h"
 
 void output(const char *ptext, const char *outfile) {
-    /* Handle plaintext output. */
+    /*  Handle plaintext output. */
     if (outfile)
         printf("outputted to a file.\n");
     else

@@ -17,10 +17,46 @@ static void help(void);
 static void version(void);
 
 
-/***********************************
- *            Parser               *
- ***********************************/
+int main(int argc, char *argv[]) {
+    struct argp_option options[] = {
+        {"help",    'h', 0,            0,                   "Show this help menu"},
+        {"version", 900, 0,            0,                   "Show program version"},
+        {"caesar",  901, "CIPHERTEXT", OPTION_ARG_OPTIONAL, "Decode shift ciphers"},
+        {"infile",  'i', "INFILE",     0,                   "Specify file to be read"},
+        {"outfile", 'o', "OUTFILE",    0,                   "Specify file to be written to"},
+        {"shift",   's', "SHIFT",      0,                   "Specify the shift(s) to be used"},
+        {0}
+    };
+
+    Namespace parser = {
+        {0},   // shifts[25]
+        NULL,  // infile
+        NULL,  // outfile
+        NULL,  // cipher
+        NULL,  // ciphertext
+        NULL,  // encode
+        NULL   // hash
+    };
+
+    struct argp argp = {options, parse_opt};
+    int r = argp_parse(&argp, argc, argv, 0, 0, &parser);
+
+    assert(r == 0);
+
+    if (opt_error(parser))
+        exit(1);
+
+    if (parser.cipher) {
+        if (strcmp(parser.cipher, "caesar") == 0) {
+            char *ptext = setup_plaintext(&parser);
+            run_caesar(ptext, &parser);
+            free_plaintext(ptext);
+        }
+    }
+}
+
 static int parse_opt(int key, char *arg, struct argp_state *state) {
+    /*  Set parser struct fields based on command-line arguments. */
     Namespace *parser = state->input; 
 
     switch(key) {
@@ -53,6 +89,7 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
 }
 
 static int setup_shifts(char *arg, Namespace *parser) {
+    /*  Separate shifts and add them to the shift array. */
     int shift_count = 0;
     char *token;
     
@@ -74,6 +111,7 @@ static int setup_shifts(char *arg, Namespace *parser) {
 }
 
 static int opt_error(Namespace parser) {
+    /*  Handle invalid parser options.  */
     if ((!parser.cipher && !parser.encode && !parser.hash) &&
         (parser.infile || parser.outfile)) {
         puts("error: no mode specified.");
@@ -133,46 +171,3 @@ static void version(void) {
     printf("eve version 0.0.1\n");
     exit(0);
 }
-
-
-/***********************************
- *              Main               *
- ***********************************/
-int main(int argc, char *argv[]) {
-    struct argp_option options[] = {
-        {"help",    'h', 0,            0,                   "Show this help menu"},
-        {"version", 900, 0,            0,                   "Show program version"},
-        {"caesar",  901, "CIPHERTEXT", OPTION_ARG_OPTIONAL, "Decode shift ciphers"},
-        {"infile",  'i', "INFILE",     0,                   "Specify file to be read"},
-        {"outfile", 'o', "OUTFILE",    0,                   "Specify file to be written to"},
-        {"shift",   's', "SHIFT",      0,                   "Specify the shift(s) to be used"},
-        {0}
-    };
-
-    Namespace parser = {
-        {0},   // shifts[25]
-        NULL,  // infile
-        NULL,  // outfile
-        NULL,  // cipher
-        NULL,  // ciphertext
-        NULL,  // encode
-        NULL   // hash
-    };
-
-    struct argp argp = {options, parse_opt};
-    int r = argp_parse(&argp, argc, argv, 0, 0, &parser);
-
-    assert(r == 0);
-
-    if (opt_error(parser))
-        exit(1);
-
-    if (parser.cipher) {
-        if (strcmp(parser.cipher, "caesar") == 0) {
-            char *ptext = setup_plaintext(&parser);
-            run_caesar(ptext, &parser);
-            free_plaintext(ptext);
-        }
-    }
-}
-
