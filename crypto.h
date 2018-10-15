@@ -3,7 +3,7 @@
 
 #include "eve.h"
 
-char *setup_plaintext(const char *infile, const char *ctext);
+char *setup_plaintext(Namespace *parser);
 int free_plaintext(char *ptext);
 int total_char_count(const char *infile);
 void run_caesar(char *ptext, Namespace *parser);
