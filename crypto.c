@@ -13,14 +13,20 @@
 /***********************************
  *          Crypto Setup           *
  ***********************************/
-char *setup_plaintext(const char *infile, const char *ctext) {
+char *setup_plaintext(Namespace *parser) {
     /* Allocate memory to 'plaintext' */
     char *plaintext;
 
-    if (! infile)
-        plaintext = malloc(sizeof(char) * strlen(ctext));
+    if (! parser->infile) {
+        if (strcmp(parser->cipher, "caesar") == 0)
+            plaintext = malloc(sizeof(char) * strlen(parser->ciphertext));
+        else {
+            printf("Assign proper memory to plaintext\n");
+            exit(1);
+        }
+    }
     else
-        plaintext = malloc(sizeof(char) * total_char_count(infile));
+        plaintext = malloc(sizeof(char) * total_char_count(parser->infile));
 
     if (plaintext == NULL) {
         puts("error: unsuccessful memory allocation for 'plaintext'");
