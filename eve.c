@@ -6,68 +6,64 @@
 #include <argp.h>
 
 #include "crypto.h"
+#include "eve.h"
 
-/* Global variables */
-
-static int arg_shifts[25];
-static char *arg_infile     = NULL;
-static char *arg_outfile    = NULL;
-static char *arg_cipher     = NULL;
-static char *arg_encode     = NULL;
-static char *arg_hash       = NULL;
-static char *arg_ciphertext = NULL;
 
 /* Prototypes */
 static int parse_opt(int key, char *arg, struct argp_state *state);
-static int opt_error();
-static int setup_shifts(char *arg);
-static int help(void);
-static int version(void);
+static int opt_error(Namespace parser);
+static int setup_shifts(char *arg, Namespace *parser);
+static void help(void);
+static void version(void);
 
 
 /***********************************
  *            Parser               *
  ***********************************/
 static int parse_opt(int key, char *arg, struct argp_state *state) {
+    Namespace *parser = state->input; 
+
     switch(key) {
         case 'h':
-            return help();
+            help();
         case 900:
-            return version();
+            version();
         case 'i': {
-            arg_infile = arg;
+            parser->infile = arg;
             break;
         }
         case 'o': {
-            arg_outfile = arg;
+            parser->outfile = arg;
             break;
         }
         case 's': {
-            setup_shifts(arg);
+            setup_shifts(arg, parser);
             break;
         }
         case 901: {
-            arg_cipher = "caesar";
-            arg_ciphertext = arg;
+            parser->cipher = "caesar";
+            parser->ciphertext = arg;
             break;
         }
+        default:
+            return ARGP_ERR_UNKNOWN;
     }
 
     return 0;
 }
 
-static int setup_shifts(char *arg) {
+static int setup_shifts(char *arg, Namespace *parser) {
     int shift_count = 0;
     char *token;
-
+    
     while( (token = strsep(&arg,",")) != NULL ) {
         if (strcmp(token, "all") == 0) {
             for (shift_count = 0; shift_count < 25; shift_count++)
-                arg_shifts[shift_count] = shift_count + 1;
+                parser->shifts[shift_count] = shift_count + 1;
             break;
         }
         else if (atoi(token) > 0 && atoi(token) < 26)
-            arg_shifts[shift_count++] = atoi(token);
+            parser->shifts[shift_count++] = atoi(token);
         else {
             puts("error: invalid shift");
             exit(1);
@@ -77,37 +73,43 @@ static int setup_shifts(char *arg) {
     return 0;
 }
 
-static int opt_error() {
-    if (arg_cipher) {
-        if (!arg_ciphertext && !arg_infile) {
-            printf("error: missing ciphertext.\n");
-            return 1;
-        }
-        else if (arg_ciphertext && arg_infile) {
-            printf("error: option \"--%s\" must be empty if option "
-                   "\"--infile\" is specified\n", arg_cipher);
-            return 1;
-        }
-        else if (arg_shifts[0] == 0) {
-            printf("error: no shift(s) given.\n");
-            return 1;
-        }
-    }
-
-    if (arg_encode) {
-        printf("handling encoding...\n");
+static int opt_error(Namespace parser) {
+    if ((!parser.cipher && !parser.encode && !parser.hash) &&
+        (parser.infile || parser.outfile)) {
+        puts("error: no mode specified.");
         return 1;
     }
 
-    if (arg_hash) {
-        printf("handling hash...\n");
+    if (parser.cipher) {
+        if (!parser.ciphertext && !parser.infile) {
+            puts("error: missing ciphertext.");
+            return 1;
+        }
+        else if (parser.ciphertext && parser.infile) {
+            printf("error: option \"--%s\" must be empty if option "
+                   "\"--infile\" is specified\n", parser.cipher);
+            return 1;
+        }
+        else if (parser.shifts[0] == 0) {
+            puts("error: no shift(s) given.");
+            return 1;
+        }
+    }
+
+    if (parser.encode) {
+        puts("handling encoding...");
+        return 1;
+    }
+
+    if (parser.hash) {
+        puts("handling hash...");
         return 1;
     }
 
     return 0;
 }
 
-static int help(void) {
+static void help(void) {
     printf("usage: eve [options] <mode>[=<ciphertext>]\n"
            "\nModes:\n"
            "  ciphers      --caesar\n"
@@ -122,13 +124,12 @@ static int help(void) {
            "\n   cryptography\n"
            "     -s, --shift   SHIFT[,SHIFT...]    Specify shift(s) to be used\n\n"
     );
-
-    return 0;
+    exit(0);
 }
 
-static int version(void) {
+static void version(void) {
     printf("eve version 0.0.1\n");
-    return 0;
+    exit(0);
 }
 
 
@@ -146,18 +147,28 @@ int main(int argc, char *argv[]) {
         {0}
     };
 
+    Namespace parser = {
+        {0},   // shifts[25]
+        NULL,  // infile
+        NULL,  // outfile
+        NULL,  // cipher
+        NULL,  // ciphertext
+        NULL,  // encode
+        NULL   // hash
+    };
+
     struct argp argp = {options, parse_opt};
-    int r = argp_parse(&argp, argc, argv, 0, 0, 0);
+    int r = argp_parse(&argp, argc, argv, 0, 0, &parser);
 
     assert(r == 0);
 
-    if (opt_error())
+    if (opt_error(parser))
         exit(1);
 
-    if (arg_cipher) {
-        if (strcmp(arg_cipher, "caesar") == 0) {
-            char *ptext = setup_plaintext(arg_infile, arg_ciphertext);
-            run_caesar(ptext, arg_shifts, arg_ciphertext, arg_infile, arg_outfile);
+    if (parser.cipher) {
+        if (strcmp(parser.cipher, "caesar") == 0) {
+            char *ptext = setup_plaintext(parser.infile, parser.ciphertext);
+            run_caesar(ptext, &parser);
             free_plaintext(ptext);
         }
     }
