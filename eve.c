@@ -101,7 +101,7 @@ static int opt_error(Namespace parser) {
             return 1;
         }
         else if ((!parser.etext && !parser.infile) ||
-                 strcmp(parser.etext, " "))
+                 strcmp(parser.etext, " ") == 0)
         {
             puts("error: missing ciphertext.");
             return 1;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
         NULL,  // mode
         NULL,  // cipher
         NULL,  // encoding
-        NULL   // hash
+        NULL,  // hash
         NULL,  // etext (encrypted text)
     };
 
