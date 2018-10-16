@@ -80,15 +80,10 @@ static int setup_shifts(char *arg, Namespace *parser) {
 
 static int opt_error(Namespace parser) {
     /*  Handle invalid parser options.  */
-    if (!parser.mode && (parser.infile || parser.outfile)) {
-        puts("error: no mode specified.");
+    if (!parser.mode || (!parser.mode && (parser.infile || parser.outfile))) {
+        puts("no mode specified.");
         return 1;
     }
-    /*if ((!parser.cipher && !parser.encode && !parser.hash) &&*/
-        /*(parser.infile || parser.outfile)) {*/
-        /*puts("error: no mode specified.");*/
-        /*return 1;*/
-    /*}*/
 
     if (strcmp(parser.mode, "cipher") == 0) {
         if (parser.shifts[0] == 0) {
