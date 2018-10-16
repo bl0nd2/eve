@@ -19,7 +19,7 @@ char *setup_plaintext(Namespace *parser) {
 
     if (! parser->infile) {
         if (strcmp(parser->cipher, "caesar") == 0)
-            plaintext = malloc(sizeof(char) * strlen(parser->ciphertext));
+            plaintext = malloc(sizeof(char) * strlen(parser->etext));
         else {
             printf("Assign proper memory to plaintext\n");
             exit(1);
@@ -66,7 +66,7 @@ void run_caesar(char *ptext, Namespace *parser) {
 
     if (! parser->infile) {
         for (shift = parser->shifts; *shift; shift++) {
-            caesar(parser->ciphertext, ptext, 0, shift);
+            caesar(parser->etext, ptext, 0, shift);
             output(ptext, parser->outfile);
         }
     }
@@ -101,4 +101,42 @@ void caesar(char *ctext, char *ptext, const int spacing, const int *shift) {
         else
             ptext[i + spacing] = ascii_val;
     }
+}
+
+void run_base64(char *ptext, Namespace *parser) {
+    /*  Use MIME Base64 scheme
+     *  Newlines and whitespaces are ignored on decoding
+     *
+     *  Normal example:
+     *    "Man" would be TWFu (as bytes: M=77, a=97, n=110), or 
+     *      binary values M=01001101, a=01100001, n=01101110.
+     *      Together, that's 010011010110000101101110.
+     *    Groups of 6 bits (2^6 = 64 binary values) are converted
+     *      into numbers left to right (in this case, there are 4
+     *      numbers for a 24-bit string).
+     *    These numbers are converted into their corresponding Base64 values.
+     *
+     *  Padding example:
+     *    = can be added to make the last encoded block contain 4 Base64 characters.
+     *
+     *    "Ma" is only 16 bits, which'll all get captured in the 1st 3 Base64
+     *      digits (18 bits). The 2 least significant bits of the last 6-bits
+     *      turn out to be 0's and when decoding, we'll discard those, along
+     *      with any padding characters.
+     *
+     *    2 == indicates that the last group contained only 1 byte, 1 == indicates
+     *      it contained 2 bytes.
+     *
+     *
+     *  Decoding:
+     *    4 characters are typically converted back to 3 bytes. The only exceptions
+     *      are when padding exists. 1 = means the 4 characters will decode to only
+     *      2 bytes, while == means 1 byte.
+     *    
+     */
+    printf("running base64\n");
+}
+
+void base64(char *ctext, char *ptext) {
+    printf("base64\n");
 }

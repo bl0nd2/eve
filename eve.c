@@ -17,44 +17,6 @@ static void help(void);
 static void version(void);
 
 
-int main(int argc, char *argv[]) {
-    struct argp_option options[] = {
-        {"help",    'h', 0,            0,                   "Show this help menu"},
-        {"version", 900, 0,            0,                   "Show program version"},
-        {"caesar",  901, "CIPHERTEXT", OPTION_ARG_OPTIONAL, "Decode shift ciphers"},
-        {"infile",  'i', "INFILE",     0,                   "Specify file to be read"},
-        {"outfile", 'o', "OUTFILE",    0,                   "Specify file to be written to"},
-        {"shift",   's', "SHIFT",      0,                   "Specify the shift(s) to be used"},
-        {0}
-    };
-
-    Namespace parser = {
-        {0},   // shifts[25]
-        NULL,  // infile
-        NULL,  // outfile
-        NULL,  // cipher
-        NULL,  // ciphertext
-        NULL,  // encode
-        NULL   // hash
-    };
-
-    struct argp argp = {options, parse_opt};
-    int r = argp_parse(&argp, argc, argv, 0, 0, &parser);
-
-    assert(r == 0);
-
-    if (opt_error(parser))
-        exit(1);
-
-    if (parser.cipher) {
-        if (strcmp(parser.cipher, "caesar") == 0) {
-            char *ptext = setup_plaintext(&parser);
-            run_caesar(ptext, &parser);
-            free_plaintext(ptext);
-        }
-    }
-}
-
 static int parse_opt(int key, char *arg, struct argp_state *state) {
     /*  Set parser struct fields based on command-line arguments. */
     Namespace *parser = state->input; 
@@ -77,9 +39,15 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         }
         case 901: {
+            parser->mode = "cipher";
             parser->cipher = "caesar";
-            parser->ciphertext = arg;
+            parser->etext= arg;
             break;
+        }
+        case 902: {
+            parser->mode = "encoding";
+            parser->encoding = "base64";
+            parser->etext=arg;
         }
         default:
             return ARGP_ERR_UNKNOWN;
@@ -112,36 +80,39 @@ static int setup_shifts(char *arg, Namespace *parser) {
 
 static int opt_error(Namespace parser) {
     /*  Handle invalid parser options.  */
-    if ((!parser.cipher && !parser.encode && !parser.hash) &&
-        (parser.infile || parser.outfile)) {
+    if (!parser.mode && (parser.infile || parser.outfile)) {
         puts("error: no mode specified.");
         return 1;
     }
+    /*if ((!parser.cipher && !parser.encode && !parser.hash) &&*/
+        /*(parser.infile || parser.outfile)) {*/
+        /*puts("error: no mode specified.");*/
+        /*return 1;*/
+    /*}*/
 
-    if (parser.cipher) {
+    if (strcmp(parser.mode, "cipher") == 0) {
         if (parser.shifts[0] == 0) {
             puts("error: no shift(s) given.");
             return 1;
         }
-        else if (parser.ciphertext && parser.infile) {
+        else if (parser.etext && parser.infile) {
             printf("error: option \"--%s\" must be empty if option "
                    "\"--infile\" is specified\n", parser.cipher);
             return 1;
         }
-        else if ((!parser.ciphertext && !parser.infile) ||
-                 strcmp(parser.ciphertext, " "))
+        else if ((!parser.etext && !parser.infile) ||
+                 strcmp(parser.etext, " "))
         {
             puts("error: missing ciphertext.");
             return 1;
         }
     }
 
-    if (parser.encode) {
+    else if (strcmp(parser.mode, "encoding") == 0) {
         puts("handling encoding...");
         return 1;
     }
-
-    if (parser.hash) {
+    else if (strcmp(parser.mode, "hash") == 0) {
         puts("handling hash...");
         return 1;
     }
@@ -171,3 +142,44 @@ static void version(void) {
     printf("eve version 0.0.1\n");
     exit(0);
 }
+
+int main(int argc, char *argv[]) {
+    struct argp_option options[] = {
+        {"help",    'h', 0,         0,                   "Show this help menu"},
+        {"version", 900, 0,         0,                   "Show program version"},
+        {"caesar",  901, "ETEXT",   OPTION_ARG_OPTIONAL, "Decode shift ciphers"},
+        {"base64",  902, "ETEXT",   OPTION_ARG_OPTIONAL, "Decode base64 encodings"},
+        {"infile",  'i', "INFILE",  0,                   "Specify file to be read"},
+        {"outfile", 'o', "OUTFILE", 0,                   "Specify file to be written to"},
+        {"shift",   's', "SHIFT",   0,                   "Specify the shift(s) to be used"},
+        {0}
+    };
+
+    Namespace parser = {
+        {0},   // shifts[25]
+        NULL,  // infile
+        NULL,  // outfile
+        NULL,  // mode
+        NULL,  // cipher
+        NULL,  // encoding
+        NULL   // hash
+        NULL,  // etext (encrypted text)
+    };
+
+    struct argp argp = {options, parse_opt};
+    int r = argp_parse(&argp, argc, argv, 0, 0, &parser);
+
+    assert(r == 0);
+
+    if (opt_error(parser))
+        exit(1);
+
+    if (parser.cipher) {
+        if (strcmp(parser.cipher, "caesar") == 0) {
+            char *ptext = setup_plaintext(&parser);
+            run_caesar(ptext, &parser);
+            free_plaintext(ptext);
+        }
+    }
+}
+

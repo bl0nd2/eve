@@ -5,10 +5,11 @@ typedef struct {
     int shifts[25];
     char *infile;
     char *outfile;
+    char *mode;
     char *cipher;
-    char *ciphertext;
-    char *encode;
+    char *encoding;
     char *hash;
+    char *etext;
 } Namespace;
 
 #endif //EVE_H_
