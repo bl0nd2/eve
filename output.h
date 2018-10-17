@@ -1,6 +1,8 @@
 #ifndef OUTPUT_H_
 #define OUTPUT_H_
 
-void output(const char *ptext, const char *outfile);
+#include "eve.h"
+
+void output(const char *ptext, Namespace *parser);
 
 #endif // OUTPUT_H_

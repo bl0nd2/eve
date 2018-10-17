@@ -48,6 +48,7 @@ static int parse_opt(int key, char *arg, struct argp_state *state) {
             parser->mode = "encoding";
             parser->encoding = "base64";
             parser->etext=arg;
+            break;
         }
         default:
             return ARGP_ERR_UNKNOWN;
@@ -85,6 +86,17 @@ static int opt_error(Namespace parser) {
         return 1;
     }
 
+    /* Make this bitch mutually exclusive cause argp sucks */
+    if ((parser.cipher && parser.encoding) ||
+        (parser.cipher && parser.hash)     ||
+        (parser.encoding && parser.cipher) ||
+        (parser.encoding && parser.hash)   ||
+        (parser.hash && parser.encoding)   ||
+        (parser.hash && parser.cipher)) {
+        puts("error: multiple modes specified.");
+        return 1;
+    }
+
     if (strcmp(parser.mode, "cipher") == 0) {
         if (parser.shifts[0] == 0) {
             puts("error: no shift(s) given.");
@@ -103,10 +115,10 @@ static int opt_error(Namespace parser) {
         }
     }
 
-    else if (strcmp(parser.mode, "encoding") == 0) {
-        puts("handling encoding...");
-        return 1;
-    }
+    /*else if (strcmp(parser.mode, "encoding") == 0) {*/
+        /*puts("handling encoding...");*/
+        /*return 1;*/
+    /*}*/
     else if (strcmp(parser.mode, "hash") == 0) {
         puts("handling hash...");
         return 1;
@@ -169,12 +181,21 @@ int main(int argc, char *argv[]) {
     if (opt_error(parser))
         exit(1);
 
-    if (parser.cipher) {
+    else if (strcmp(parser.mode, "cipher") == 0) {
         if (strcmp(parser.cipher, "caesar") == 0) {
             char *ptext = setup_plaintext(&parser);
             run_caesar(ptext, &parser);
             free_plaintext(ptext);
         }
     }
+    else if (strcmp(parser.mode, "encoding") == 0) {
+        if (strcmp(parser.encoding, "base64") == 0) {
+            char *ptext = setup_plaintext(&parser);
+            run_base64(ptext, &parser);
+            free_plaintext(ptext);
+        }
+    }
+
+    return 0;
 }
 

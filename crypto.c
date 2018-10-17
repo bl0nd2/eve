@@ -18,8 +18,15 @@ char *setup_plaintext(Namespace *parser) {
     char *plaintext;
 
     if (! parser->infile) {
-        if (strcmp(parser->cipher, "caesar") == 0)
+        if (strcmp(parser->mode, "cipher") == 0)
             plaintext = malloc(sizeof(char) * strlen(parser->etext));
+        else if (strcmp(parser->mode, "encoding") == 0) {
+            if (strcmp(parser->encoding, "base64") == 0) {
+                // apparently encoded base64 is about 1.37N
+                // turns out 1.37 cuts off the plaintext for longer encodings so...
+                plaintext = malloc(sizeof(char) * ((double) strlen(parser->etext) / 1.3));
+            }
+        }
         else {
             printf("Assign proper memory to plaintext\n");
             exit(1);
@@ -67,7 +74,7 @@ void run_caesar(char *ptext, Namespace *parser) {
     if (! parser->infile) {
         for (shift = parser->shifts; *shift; shift++) {
             caesar(parser->etext, ptext, 0, shift);
-            output(ptext, parser->outfile);
+            output(ptext, parser);
         }
     }
     else {
@@ -81,7 +88,7 @@ void run_caesar(char *ptext, Namespace *parser) {
                 caesar(line, ptext, spacing, shift);
                 spacing += strlen(line);
             }
-            output(ptext, parser->outfile);
+            output(ptext, parser);
             fclose(fp);
         }
     }
@@ -104,39 +111,83 @@ void caesar(char *ctext, char *ptext, const int spacing, const int *shift) {
 }
 
 void run_base64(char *ptext, Namespace *parser) {
-    /*  Use MIME Base64 scheme
-     *  Newlines and whitespaces are ignored on decoding
-     *
-     *  Normal example:
-     *    "Man" would be TWFu (as bytes: M=77, a=97, n=110), or 
-     *      binary values M=01001101, a=01100001, n=01101110.
-     *      Together, that's 010011010110000101101110.
-     *    Groups of 6 bits (2^6 = 64 binary values) are converted
-     *      into numbers left to right (in this case, there are 4
-     *      numbers for a 24-bit string).
-     *    These numbers are converted into their corresponding Base64 values.
-     *
-     *  Padding example:
-     *    = can be added to make the last encoded block contain 4 Base64 characters.
-     *
-     *    "Ma" is only 16 bits, which'll all get captured in the 1st 3 Base64
-     *      digits (18 bits). The 2 least significant bits of the last 6-bits
-     *      turn out to be 0's and when decoding, we'll discard those, along
-     *      with any padding characters.
-     *
-     *    2 == indicates that the last group contained only 1 byte, 1 == indicates
-     *      it contained 2 bytes.
-     *
-     *
-     *  Decoding:
-     *    4 characters are typically converted back to 3 bytes. The only exceptions
-     *      are when padding exists. 1 = means the 4 characters will decode to only
-     *      2 bytes, while == means 1 byte.
-     *    
-     */
-    printf("running base64\n");
+    int len_str = strlen(parser->etext);
+
+    if (!parser->infile) {
+        base64(parser->etext, len_str, ptext);
+        output(ptext, parser);
+    }
+    else
+        printf("running base64\n");
 }
 
-void base64(char *ctext, char *ptext) {
-    printf("base64\n");
-}
+void base64(char *ctext, int len_str, char *ptext) {
+    int i, j, k = 0; 
+  
+    // stores the bitstream. 
+    int num = 0; 
+  
+    // count_bits stores current 
+    // number of bits in num. 
+    int count_bits = 0; 
+  
+    // selects 4 characters from 
+    // encoded string at a time. 
+    // find the position of each encoded 
+    // character in char_set and stores in num. 
+    for (i = 0; i < len_str; i += 4) { 
+        num = 0, count_bits = 0; 
+        for (j = 0; j < 4; j++) { 
+            // make space for 6 bits. 
+            if (ctext[i + j] != '=') { 
+                num = num << 6; 
+                count_bits += 6; 
+            } 
+  
+            /* Finding the position of each encoded  
+            character in char_set  
+            and storing in "num", use OR  
+            '|' operator to store bits.*/
+  
+            // encoded[i + j] = 'E', 'E' - 'A' = 5 
+            // 'E' has 5th position in char_set. 
+            if (ctext[i + j] >= 'A' && ctext[i + j] <= 'Z') 
+                num = num | (ctext[i + j] - 'A'); 
+  
+            // encoded[i + j] = 'e', 'e' - 'a' = 5, 
+            // 5 + 26 = 31, 'e' has 31st position in char_set. 
+            else if (ctext[i + j] >= 'a' && ctext[i + j] <= 'z') 
+                num = num | (ctext[i + j] - 'a' + 26); 
+  
+            // encoded[i + j] = '8', '8' - '0' = 8 
+            // 8 + 52 = 60, '8' has 60th position in char_set. 
+            else if (ctext[i + j] >= '0' && ctext[i + j] <= '9') 
+                num = num | (ctext[i + j] - '0' + 52); 
+  
+            // '+' occurs in 62nd position in char_set. 
+            else if (ctext[i + j] == '+') 
+                num = num | 62; 
+  
+            // '/' occurs in 63rd position in char_set. 
+            else if (ctext[i + j] == '/') 
+                num = num | 63; 
+  
+            // ( str[i + j] == '=' ) remove 2 bits 
+            // to delete appended bits during encoding. 
+            else { 
+                num = num >> 2; 
+                count_bits -= 2; 
+            } 
+        } 
+  
+        while (count_bits != 0) { 
+            count_bits -= 8; 
+  
+            // 255 in binary is 11111111 
+            ptext[k++] = (num >> count_bits) & 255; 
+        } 
+    } 
+  
+    // place NULL character to mark end of string. 
+    ptext[k] = '\0'; 
+} 
